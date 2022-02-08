@@ -737,7 +737,19 @@ FixedwingPositionControl::set_control_mode_current(const hrt_abstime &now, bool 
 
 	if (((_control_mode.flag_control_auto_enabled && _control_mode.flag_control_position_enabled) ||
 	     _control_mode.flag_control_offboard_enabled) && pos_sp_curr_valid) {
-		_control_mode_current = FW_POSCTRL_MODE_AUTO;
+		if (_pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
+			// TAKEOFF: handle like a regular POSITION setpoint if already flying
+			if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
+				// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
+				_control_mode_current = FW_POSCTRL_MODE_AUTO;
+
+			} else {
+				_control_mode_current = FW_POSCTRL_MODE_AUTO_TAKEOFF;
+			}
+
+		} else {
+			_control_mode_current = FW_POSCTRL_MODE_AUTO;
+		}
 
 	} else if (_control_mode.flag_control_auto_enabled && _control_mode.flag_control_climb_rate_enabled
 		   && pos_sp_curr_valid) {
@@ -810,18 +822,6 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 	_att_sp.fw_control_yaw = false;		// by default we don't want yaw to be contoller directly with rudder
 	_att_sp.apply_flaps = vehicle_attitude_setpoint_s::FLAPS_OFF;		// by default we don't use flaps
 
-	/* save time when airplane is in air */
-	if (!_was_in_air && !_landed) {
-		_was_in_air = true;
-		_time_went_in_air = now;
-		_takeoff_ground_alt = _current_altitude;
-	}
-
-	/* reset flag when airplane landed */
-	if (_landed) {
-		_was_in_air = false;
-	}
-
 	/* Reset integrators if switching to this mode from a other mode in which posctl was not active */
 	if (_control_mode_current == FW_POSCTRL_MODE_OTHER) {
 		/* reset integrators */
@@ -878,6 +878,7 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 	}
 
 	switch (position_sp_type) {
+	case position_setpoint_s::SETPOINT_TYPE_TAKEOFF:
 	case position_setpoint_s::SETPOINT_TYPE_IDLE:
 		_att_sp.thrust_body[0] = 0.0f;
 		_att_sp.roll_body = 0.0f;
@@ -899,16 +900,11 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 	case position_setpoint_s::SETPOINT_TYPE_LAND:
 		control_auto_landing(now, dt, curr_pos, ground_speed, pos_sp_prev, current_sp);
 		break;
-
-	case position_setpoint_s::SETPOINT_TYPE_TAKEOFF:
-		control_auto_takeoff(now, dt, curr_pos, ground_speed, pos_sp_prev, current_sp);
-		break;
 	}
 
 	Vector2f curr_pos_local{_local_pos.x, _local_pos.y};
 
-	if (position_sp_type != position_setpoint_s::SETPOINT_TYPE_TAKEOFF
-	    && position_sp_type != position_setpoint_s::SETPOINT_TYPE_LAND) {
+	if (position_sp_type != position_setpoint_s::SETPOINT_TYPE_LAND) {
 
 		if (_param_fw_use_npfg.get()) {
 			Vector2f path_point_sp(path_sp.x, path_sp.y);
@@ -961,21 +957,7 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 	}
 
 	/* Copy thrust output for publication, handle special cases */
-	if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF && // launchdetector only available in auto
-	    _launch_detection_state != LAUNCHDETECTION_RES_DETECTED_ENABLEMOTORS &&
-	    !_runway_takeoff.runwayTakeoffEnabled()) {
-
-		/* making sure again that the correct thrust is used,
-		 * without depending on library calls for safety reasons.
-		   the pre-takeoff throttle and the idle throttle normally map to the same parameter. */
-		_att_sp.thrust_body[0] = _param_fw_thr_idle.get();
-
-	} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
-		   _runway_takeoff.runwayTakeoffEnabled()) {
-
-		_att_sp.thrust_body[0] = _runway_takeoff.getThrottle(now, get_tecs_thrust());
-
-	} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
+	if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
 
 		_att_sp.thrust_body[0] = 0.0f;
 
@@ -1088,15 +1070,8 @@ FixedwingPositionControl::handle_setpoint_type(const uint8_t setpoint_type, cons
 
 	uint8_t position_sp_type = setpoint_type;
 
-	if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
-		// TAKEOFF: handle like a regular POSITION setpoint if already flying
-		if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
-			// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
-			position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-		}
-
-	} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_POSITION
-		   || pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+	if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_POSITION
+	    || pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 
 		float dist_xy = -1.f;
 		float dist_z = -1.f;
@@ -1462,9 +1437,12 @@ FixedwingPositionControl::control_auto_loiter(const hrt_abstime &now, const floa
 }
 
 void
-FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const float dt, const Vector2d &curr_pos,
+FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const Vector2d &curr_pos,
 		const Vector2f &ground_speed, const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr)
 {
+	const float dt = math::constrain((now - _control_position_last_called) * 1e-6f, 0.01f, 0.05f);
+	_control_position_last_called = now;
+
 	/* current waypoint (the one currently heading for) */
 	Vector2d curr_wp(pos_sp_curr.lat, pos_sp_curr.lon);
 	Vector2d prev_wp{0, 0}; /* previous waypoint */
@@ -1662,6 +1640,28 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 			/* Set default roll and pitch setpoints during detection phase */
 			_att_sp.roll_body = 0.0f;
 			_att_sp.pitch_body = radians(_takeoff_pitch_min.get());
+		}
+	}
+
+	if (_launch_detection_state != LAUNCHDETECTION_RES_DETECTED_ENABLEMOTORS && !_runway_takeoff.runwayTakeoffEnabled()) {
+
+		/* making sure again that the correct thrust is used,
+		 * without depending on library calls for safety reasons.
+		   the pre-takeoff throttle and the idle throttle normally map to the same parameter. */
+		_att_sp.thrust_body[0] = _param_fw_thr_idle.get();
+
+	} else if (_runway_takeoff.runwayTakeoffEnabled()) {
+
+		_att_sp.thrust_body[0] = _runway_takeoff.getThrottle(now, get_tecs_thrust());
+
+	} else {
+		/* Copy thrust and pitch values from tecs */
+		if (_landed) {
+			// when we are landed state we want the motor to spin at idle speed
+			_att_sp.thrust_body[0] = min(_param_fw_thr_idle.get(), 1.f);
+
+		} else {
+			_att_sp.thrust_body[0] = get_tecs_thrust();
 		}
 	}
 }
@@ -2377,6 +2377,18 @@ FixedwingPositionControl::Run()
 
 		set_control_mode_current(_local_pos.timestamp, _pos_sp_triplet.current.valid);
 
+		/* save time when airplane is in air */
+		if (!_was_in_air && !_landed) {
+			_was_in_air = true;
+			_time_went_in_air = _local_pos.timestamp;
+			_takeoff_ground_alt = _current_altitude;
+		}
+
+		/* reset flag when airplane landed */
+		if (_landed) {
+			_was_in_air = false;
+		}
+
 		switch (_control_mode_current) {
 		case FW_POSCTRL_MODE_AUTO: {
 				control_auto(_local_pos.timestamp, curr_pos, ground_speed, _pos_sp_triplet.previous, _pos_sp_triplet.current,
@@ -2391,6 +2403,11 @@ FixedwingPositionControl::Run()
 
 		case FW_POSCTRL_MODE_AUTO_CLIMBRATE: {
 				control_auto_descend(_local_pos.timestamp);
+				break;
+			}
+
+		case FW_POSCTRL_MODE_AUTO_TAKEOFF: {
+				control_auto_takeoff(_local_pos.timestamp, curr_pos, ground_speed, _pos_sp_triplet.previous, _pos_sp_triplet.current);
 				break;
 			}
 
