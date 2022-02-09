@@ -904,6 +904,7 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 	}
 
 	Vector2f curr_pos_local{_local_pos.x, _local_pos.y};
+	float target_airspeed = path_sp.airspeed;
 
 	if (_param_fw_use_npfg.get()) {
 		Vector2f path_point_sp(path_sp.x, path_sp.y);
@@ -913,6 +914,11 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 					  curvature);
 
 		_att_sp.roll_body = _npfg.getRollSetpoint();
+
+		_npfg.setAirspeedNom(target_airspeed * _eas2tas);
+		_npfg.setAirspeedMax(_param_fw_airspd_max.get() * _eas2tas);
+		target_airspeed = _npfg.getAirspeedRef() / _eas2tas;
+
 
 	} else {
 		Vector2f curr_wp(path_sp.x, path_sp.y);
@@ -937,6 +943,43 @@ FixedwingPositionControl::control_auto(const hrt_abstime &now, const Vector2d &c
 	}
 
 	_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
+
+	float tecs_fw_thr_min;
+	float tecs_fw_thr_max;
+	float tecs_fw_mission_throttle;
+
+	float mission_throttle = _param_fw_thr_cruise.get();
+
+	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
+	    pos_sp_curr.cruising_throttle >= 0.0f) {
+		mission_throttle = pos_sp_curr.cruising_throttle;
+	}
+
+	if (mission_throttle < _param_fw_thr_min.get()) {
+		/* enable gliding with this waypoint */
+		_tecs.set_speed_weight(2.0f);
+		tecs_fw_thr_min = 0.0;
+		tecs_fw_thr_max = 0.0;
+		tecs_fw_mission_throttle = 0.0;
+
+	} else {
+		tecs_fw_thr_min = _param_fw_thr_min.get();
+		tecs_fw_thr_max = _param_fw_thr_max.get();
+		tecs_fw_mission_throttle = mission_throttle;
+	}
+
+
+	tecs_update_pitch_throttle(now, path_sp.z,
+				   target_airspeed,
+				   radians(_param_fw_p_lim_min.get()),
+				   radians(_param_fw_p_lim_max.get()),
+				   tecs_fw_thr_min,
+				   tecs_fw_thr_max,
+				   tecs_fw_mission_throttle,
+				   false,
+				   radians(_param_fw_p_lim_min.get()),
+				   tecs_status_s::TECS_MODE_NORMAL,
+				   pos_sp_curr.vz);
 
 	/* reset landing state */
 	if (position_sp_type != position_setpoint_s::SETPOINT_TYPE_LAND) {
@@ -1127,30 +1170,6 @@ FixedwingPositionControl::control_auto_position(const hrt_abstime &now, const fl
 		prev_wp(1) = pos_sp_curr.lon;
 	}
 
-	float tecs_fw_thr_min;
-	float tecs_fw_thr_max;
-	float tecs_fw_mission_throttle;
-
-	float mission_throttle = _param_fw_thr_cruise.get();
-
-	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
-	    pos_sp_curr.cruising_throttle >= 0.0f) {
-		mission_throttle = pos_sp_curr.cruising_throttle;
-	}
-
-	if (mission_throttle < _param_fw_thr_min.get()) {
-		/* enable gliding with this waypoint */
-		_tecs.set_speed_weight(2.0f);
-		tecs_fw_thr_min = 0.0;
-		tecs_fw_thr_max = 0.0;
-		tecs_fw_mission_throttle = 0.0;
-
-	} else {
-		tecs_fw_thr_min = _param_fw_thr_min.get();
-		tecs_fw_thr_max = _param_fw_thr_max.get();
-		tecs_fw_mission_throttle = mission_throttle;
-	}
-
 	// waypoint is a plain navigation waypoint
 	float position_sp_alt = pos_sp_curr.alt;
 
@@ -1192,12 +1211,6 @@ FixedwingPositionControl::control_auto_position(const hrt_abstime &now, const fl
 	Vector2f prev_wp_local = _global_local_proj_ref.project(prev_wp(0), prev_wp(1));
 	float target_airspeed = get_auto_airspeed_setpoint(now, pos_sp_curr.cruising_speed, ground_speed, dt);
 
-	if (_param_fw_use_npfg.get()) {
-		_npfg.setAirspeedNom(target_airspeed * _eas2tas);
-		_npfg.setAirspeedMax(_param_fw_airspd_max.get() * _eas2tas);
-		target_airspeed = _npfg.getAirspeedRef() / _eas2tas;
-	}
-
 	float curvature = PX4_ISFINITE(_pos_sp_triplet.current.loiter_radius) ? 1 / _pos_sp_triplet.current.loiter_radius :
 			  0.0f;
 
@@ -1212,16 +1225,6 @@ FixedwingPositionControl::control_auto_position(const hrt_abstime &now, const fl
 	setpoint.airspeed = target_airspeed;
 	setpoint.curvature = curvature;
 
-	tecs_update_pitch_throttle(now, position_sp_alt,
-				   target_airspeed,
-				   radians(_param_fw_p_lim_min.get()),
-				   radians(_param_fw_p_lim_max.get()),
-				   tecs_fw_thr_min,
-				   tecs_fw_thr_max,
-				   tecs_fw_mission_throttle,
-				   false,
-				   radians(_param_fw_p_lim_min.get()));
-
 	return setpoint;
 }
 
@@ -1229,55 +1232,9 @@ vehicle_local_path_setpoint_s
 FixedwingPositionControl::control_auto_velocity(const hrt_abstime &now, const float dt, const Vector2f &ground_speed,
 		const position_setpoint_s &pos_sp_curr)
 {
-	float tecs_fw_thr_min;
-	float tecs_fw_thr_max;
-	float tecs_fw_mission_throttle;
-
-	float mission_throttle = _param_fw_thr_cruise.get();
-
-	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
-	    pos_sp_curr.cruising_throttle >= 0.0f) {
-		mission_throttle = pos_sp_curr.cruising_throttle;
-	}
-
-	if (mission_throttle < _param_fw_thr_min.get()) {
-		/* enable gliding with this waypoint */
-		_tecs.set_speed_weight(2.0f);
-		tecs_fw_thr_min = 0.0;
-		tecs_fw_thr_max = 0.0;
-		tecs_fw_mission_throttle = 0.0;
-
-	} else {
-		tecs_fw_thr_min = _param_fw_thr_min.get();
-		tecs_fw_thr_max = _param_fw_thr_max.get();
-		tecs_fw_mission_throttle = mission_throttle;
-	}
-
 	// waypoint is a plain navigation waypoint
-	float position_sp_alt = pos_sp_curr.alt;
-
 	float target_airspeed = get_auto_airspeed_setpoint(now, pos_sp_curr.cruising_speed, ground_speed, dt);
 
-	if (_param_fw_use_npfg.get()) {
-		_npfg.setAirspeedNom(target_airspeed * _eas2tas);
-		_npfg.setAirspeedMax(_param_fw_airspd_max.get() * _eas2tas);
-		_npfg.navigateBearing(_target_bearing, ground_speed, _wind_vel);
-		_att_sp.roll_body = _npfg.getRollSetpoint();
-		target_airspeed = _npfg.getAirspeedRef() / _eas2tas;
-
-	}
-
-	tecs_update_pitch_throttle(now, position_sp_alt,
-				   target_airspeed,
-				   radians(_param_fw_p_lim_min.get()),
-				   radians(_param_fw_p_lim_max.get()),
-				   tecs_fw_thr_min,
-				   tecs_fw_thr_max,
-				   tecs_fw_mission_throttle,
-				   false,
-				   radians(_param_fw_p_lim_min.get()),
-				   tecs_status_s::TECS_MODE_NORMAL,
-				   pos_sp_curr.vz);
 	vehicle_local_path_setpoint_s setpoint;
 	setpoint.x = NAN;
 	setpoint.y = NAN;
@@ -1322,30 +1279,6 @@ FixedwingPositionControl::control_auto_loiter(const hrt_abstime &now, const floa
 		airspeed_sp = pos_sp_curr.cruising_speed;
 	}
 
-	float tecs_fw_thr_min;
-	float tecs_fw_thr_max;
-	float tecs_fw_mission_throttle;
-
-	float mission_throttle = _param_fw_thr_cruise.get();
-
-	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
-	    pos_sp_curr.cruising_throttle >= 0.0f) {
-		mission_throttle = pos_sp_curr.cruising_throttle;
-	}
-
-	if (mission_throttle < _param_fw_thr_min.get()) {
-		/* enable gliding with this waypoint */
-		_tecs.set_speed_weight(2.0f);
-		tecs_fw_thr_min = 0.0;
-		tecs_fw_thr_max = 0.0;
-		tecs_fw_mission_throttle = 0.0;
-
-	} else {
-		tecs_fw_thr_min = _param_fw_thr_min.get();
-		tecs_fw_thr_max = _param_fw_thr_max.get();
-		tecs_fw_mission_throttle = mission_throttle;
-	}
-
 	/* waypoint is a loiter waypoint */
 	float loiter_radius = pos_sp_curr.loiter_radius;
 	uint8_t loiter_direction = pos_sp_curr.loiter_direction;
@@ -1369,15 +1302,6 @@ FixedwingPositionControl::control_auto_loiter(const hrt_abstime &now, const floa
 
 	float target_airspeed = get_auto_airspeed_setpoint(now, airspeed_sp, ground_speed, dt);
 
-	if (_param_fw_use_npfg.get()) {
-		_npfg.setAirspeedNom(target_airspeed * _eas2tas);
-		_npfg.setAirspeedMax(_param_fw_airspd_max.get() * _eas2tas);
-		_npfg.navigateLoiter(curr_wp, curr_pos, loiter_radius, loiter_direction, get_nav_speed_2d(ground_speed), _wind_vel);
-		_att_sp.roll_body = _npfg.getRollSetpoint();
-		target_airspeed = _npfg.getAirspeedRef() / _eas2tas;
-
-	}
-
 	float alt_sp = pos_sp_curr.alt;
 
 	if (in_takeoff_situation()) {
@@ -1398,19 +1322,9 @@ FixedwingPositionControl::control_auto_loiter(const hrt_abstime &now, const floa
 		_tecs.set_height_error_time_constant(_param_fw_thrtc_sc.get() * _param_fw_t_h_error_tc.get());
 	}
 
-	tecs_update_pitch_throttle(now, alt_sp,
-				   target_airspeed,
-				   radians(_param_fw_p_lim_min.get()),
-				   radians(_param_fw_p_lim_max.get()),
-				   tecs_fw_thr_min,
-				   tecs_fw_thr_max,
-				   tecs_fw_mission_throttle,
-				   false,
-				   radians(_param_fw_p_lim_min.get()));
-
+	vehicle_local_path_setpoint_s setpoint;
 	Vector2f curr_wp_local = _global_local_proj_ref.project(curr_wp(0), curr_wp(1));
 	curr_wp_local.copyTo(setpoint.prev_wp);
-	vehicle_local_path_setpoint_s setpoint;
 	setpoint.x = curr_wp_local(0);
 	setpoint.y = curr_wp_local(1);
 	setpoint.z = alt_sp;
@@ -1418,7 +1332,7 @@ FixedwingPositionControl::control_auto_loiter(const hrt_abstime &now, const floa
 	setpoint.vy = NAN;
 	setpoint.vz = NAN;
 	setpoint.airspeed = target_airspeed;
-	setpoint.curvature = PX4_ISFINITE(loiter_radius) ? 1 / loiter_radius : 0.0f;
+	setpoint.curvature = PX4_ISFINITE(loiter_radius) ? float(loiter_direction) / loiter_radius : 0.0f;
 	return setpoint;
 }
 
