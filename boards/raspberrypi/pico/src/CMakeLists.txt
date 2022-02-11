@@ -31,6 +31,11 @@
 #
 ############################################################################
 
+
+message("$$ pico sdk init")
+#include(${CMAKE_CURRENT_LIST_DIR}/../../../../pico_sdk_import.cmake)
+#pico_sdk_init()
+
 add_library(drivers_board
 	boot_string.c
 	i2c.cpp
@@ -40,6 +45,7 @@ add_library(drivers_board
 	timer_config.cpp
 	usb.c
 )
+
 
 target_link_libraries(drivers_board
 	PRIVATE
