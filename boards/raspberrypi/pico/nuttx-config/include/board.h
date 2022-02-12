@@ -85,7 +85,6 @@
  * UART1RX: GPIO9
  */
 #define CONFIG_RP2040_UART0_GPIO	0	/* TELEM */
-
 #define CONFIG_RP2040_UART1_GPIO	8	/* GPS */
 
 /*
@@ -98,7 +97,7 @@
  *   The optional _GPIO configurations allow the I2C driver to manually
  *   reset the bus to clear stuck slaves.  They match the pin configuration,
  *   but are normally-high GPIOs.
- */
+*/
 #define CONFIG_RP2040_I2C1_GPIO		6
 
 /* SPI0:
@@ -108,10 +107,11 @@
  *  MISO: GPIO4
  *  MOSI: GPIO3
  */
-
+#ifndef GPIO_SPI0_SCLK
 #define GPIO_SPI0_SCLK  ( 2 | GPIO_FUN(RP2040_GPIO_FUNC_SPI) )
 #define GPIO_SPI0_MISO ( 4 | GPIO_FUN(RP2040_GPIO_FUNC_SPI) )
 #define GPIO_SPI0_MOSI ( 3 | GPIO_FUN(RP2040_GPIO_FUNC_SPI) )
+#endif
 
 /* SPI1:
  *  MPU9250 and BMP280
@@ -121,9 +121,11 @@
  *  MOSI: GPIO11
  */
 
+#ifndef GPIO_SPI1_SCLK
 #define GPIO_SPI1_SCLK	( 10 | GPIO_FUN(RP2040_GPIO_FUNC_SPI) )
 #define GPIO_SPI1_MISO	( 12 | GPIO_FUN(RP2040_GPIO_FUNC_SPI) )
 #define GPIO_SPI1_MOSI	( 11 | GPIO_FUN(RP2040_GPIO_FUNC_SPI) )
-
+#endif
 
 #endif  /* __ARCH_BOARD_BOARD_H */
+

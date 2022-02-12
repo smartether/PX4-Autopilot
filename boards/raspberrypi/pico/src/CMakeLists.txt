@@ -46,6 +46,10 @@ add_library(drivers_board
 	usb.c
 )
 
+target_include_directories(drivers_board
+PUBLIC
+${CMAKE_CURRENT_LIST_DIR}/../nuttx-config/include
+)
 
 target_link_libraries(drivers_board
 	PRIVATE

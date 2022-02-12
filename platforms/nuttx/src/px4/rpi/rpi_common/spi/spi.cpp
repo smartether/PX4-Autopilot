@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include <board_config.h>
+#include <board.h>
 #include <systemlib/px4_macros.h>
 #include <px4_platform_common/spi.h>
 #include <px4_arch/micro_hal.h>
