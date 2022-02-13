@@ -328,7 +328,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	/* initial LED state */
 	drv_led_start();
-	//led_on(0);
+	led_on(0);
 
 	// if (board_hardfault_init(2, true) != 0) {		// Needs to be figured out as RP2040 doesn't have BBSRAM.
 	// 	led_off(LED_BLUE);
