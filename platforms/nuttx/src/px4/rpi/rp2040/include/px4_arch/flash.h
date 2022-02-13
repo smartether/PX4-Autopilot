@@ -3,5 +3,4 @@
 //
 #pragma once
 
-void rp2040_flash_init();
-
+#include "../../..//rpi_common/include/px4_arch/flash.h"

@@ -234,6 +234,15 @@ message(STATUS "cmake build type: ${CMAKE_BUILD_TYPE}")
 #
 project(px4 CXX C ASM)
 
+cmake_policy(SET CMP0057 NEW)
+if(DEFINED ENV{BOOT_STAGE2_IGNORE})
+message("$$ defined stage2 ignore")
+	set(PICO_BARE_METAL true)
+endif()
+include(${CMAKE_CURRENT_LIST_DIR}/pico_sdk_import.cmake)
+pico_sdk_init()
+
+
 set(package-contact "px4users@googlegroups.com")
 
 set(CMAKE_CXX_STANDARD 14)

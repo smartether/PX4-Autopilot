@@ -211,7 +211,6 @@ rp2040_boardinitialize(void)
 
 	// /* configure LEDs */
 	board_autoled_initialize();
-
 	// Disable IE and enable OD on GPIO 26-29 (These are ADC Pins)
 	// Do this only for the channels configured in board_config.h
 	rp2040_gpioconfig(27 | GPIO_FUN(RP2040_GPIO_FUNC_NULL));		/* BATT_VOLTAGE_SENS */
@@ -329,7 +328,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	/* initial LED state */
 	drv_led_start();
-	led_on(LED_BLUE);
+	//led_on(0);
 
 	// if (board_hardfault_init(2, true) != 0) {		// Needs to be figured out as RP2040 doesn't have BBSRAM.
 	// 	led_off(LED_BLUE);
@@ -390,6 +389,6 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	/* Configure the HW based on the manifest */
 
 	px4_platform_configure();
-
+    //led_off(0);
 	return OK;
 }
