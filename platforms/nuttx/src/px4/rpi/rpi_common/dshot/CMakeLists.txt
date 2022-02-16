@@ -40,9 +40,11 @@ PUBLIC
 	${CMAKE_CURRENT_LIST_DIR}/../include
 )
 
-target_compile_definitions(arch_dshot
+target_compile_options(arch_dshot
 PRIVATE
-	-Wnoworn-unused-variable
+	-Wno-unused-variable
+	-Wno-unused-function
+	-Wno-unused-parameter
 )
 
 target_compile_options(arch_dshot PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
