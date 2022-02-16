@@ -40,4 +40,9 @@ PUBLIC
 	${CMAKE_CURRENT_LIST_DIR}/../include
 )
 
+target_compile_definitions(arch_dshot
+PRIVATE
+	-Wnoworn-unused-variable
+)
+
 target_compile_options(arch_dshot PRIVATE ${MAX_CUSTOM_OPT_LEVEL})

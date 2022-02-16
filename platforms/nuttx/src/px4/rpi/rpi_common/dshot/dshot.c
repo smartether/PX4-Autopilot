@@ -78,7 +78,7 @@ typedef struct dshot_handler_t {
 static dshot_handler_t dshot_handler[DSHOT_TIMERS] = {};
 static uint8_t dshot_burst_buffer_array[DSHOT_TIMERS * DSHOT_BURST_BUFFER_SIZE(MAX_NUM_CHANNELS_PER_TIMER)]
 px4_cache_aligned_data() = {};
-static uint32_t *dshot_burst_buffer[DSHOT_TIMERS] = {};
+// static uint32_t *dshot_burst_buffer[DSHOT_TIMERS] = {};
 
 int up_dshot_init(uint32_t channel_mask, unsigned dshot_pwm_freq)
 {
