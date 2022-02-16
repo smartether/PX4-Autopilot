@@ -19,3 +19,5 @@ param set-default CBRK_IO_SAFETY 22027
 # param set-default ATT_W_GYRO_BIAS 0.0000
 
 # param set-default SYS_HAS_MAG 0
+
+set MIXER quad_h

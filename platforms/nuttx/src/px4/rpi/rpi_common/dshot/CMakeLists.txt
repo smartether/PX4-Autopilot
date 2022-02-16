@@ -34,4 +34,10 @@
 px4_add_library(arch_dshot
 	dshot.c
 )
+
+target_include_directories(arch_dshot
+PUBLIC
+	${CMAKE_CURRENT_LIST_DIR}/../include
+)
+
 target_compile_options(arch_dshot PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
