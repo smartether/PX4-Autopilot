@@ -84,9 +84,10 @@
  * UART1TX: GPIO8
  * UART1RX: GPIO9
  */
+#ifndef CONFIG_RP2040_UART0_GPIO
 #define CONFIG_RP2040_UART0_GPIO	0	/* TELEM */
 #define CONFIG_RP2040_UART1_GPIO	8	/* GPS */
-
+#endif
 /*
  * I2C (external)
  *
@@ -98,8 +99,9 @@
  *   reset the bus to clear stuck slaves.  They match the pin configuration,
  *   but are normally-high GPIOs.
 */
-#define CONFIG_RP2040_I2C1_GPIO		6
-
+#ifndef CONFIG_RP2040_I2C1_GPIO
+#define CONFIG_RP2040_I2C1_GPIO		18
+#endif
 /* SPI0:
  *  SPIDEV_FLASH (probably micro sd card)
  *  CS: GPIO5 -- should be configured in sec/spi.cpp (probably)

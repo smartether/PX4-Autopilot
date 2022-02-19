@@ -63,7 +63,7 @@
 #define GPIO_LED_BLUE   GPIO_LED1
 
 #define BOARD_OVERLOAD_LED     LED_BLUE
-
+#define PX4_NUMBER_I2C_BUSES    2
 /*
  * ADC channels
  *
