@@ -36,5 +36,8 @@ px4_add_library(arch_i2c
 )
 target_link_libraries(arch_i2c
 		PRIVATE
-		drivers_board)
+		drivers_board
+		nuttx_arch
+		nuttx_drivers
+		nuttx_boards)
 target_compile_options(arch_i2c PRIVATE ${MAX_CUSTOM_OPT_LEVEL})

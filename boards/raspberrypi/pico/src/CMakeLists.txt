@@ -53,6 +53,7 @@ ${CMAKE_CURRENT_LIST_DIR}/../nuttx-config/include
 
 target_link_libraries(drivers_board
 	PRIVATE
+		arch_i2c
 		arch_spi
 		drivers__led # drv_led_start
 		nuttx_arch # sdio

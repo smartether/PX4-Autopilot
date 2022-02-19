@@ -159,6 +159,7 @@ int board_read_VBUS_state(void)
 	return BOARD_ADC_USB_CONNECTED ? 0 : 1;
 }
 
+
 /****************************************************************************
  * Name: rp2040_boardearlyinitialize
  *
@@ -271,7 +272,7 @@ rp2040_boardinitialize(void)
 
 	/* configure SPI all interfaces GPIO */
 	rp2040_spiinitialize();
-
+    rp2040_i2cinitialize();
 }
 
 /****************************************************************************
@@ -395,3 +396,4 @@ __EXPORT int board_app_initialize(uintptr_t arg)
     //led_off(0);
 	return OK;
 }
+
