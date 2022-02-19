@@ -272,7 +272,7 @@ rp2040_boardinitialize(void)
 
 	/* configure SPI all interfaces GPIO */
 	rp2040_spiinitialize();
-    rp2040_i2cinitialize();
+//    rp2040_i2cinitialize();
 }
 
 /****************************************************************************
