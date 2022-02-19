@@ -213,6 +213,7 @@ rp2040_boardinitialize(void)
 	board_autoled_initialize();
 	// Disable IE and enable OD on GPIO 26-29 (These are ADC Pins)
 	// Do this only for the channels configured in board_config.h
+
 	rp2040_gpioconfig(27 | GPIO_FUN(RP2040_GPIO_FUNC_NULL));		/* BATT_VOLTAGE_SENS */
 	clrbits_reg32(RP2040_PADS_BANK0_GPIO_IE, RP2040_PADS_BANK0_GPIO(27));	/* BATT_VOLTAGE_SENS */
 	setbits_reg32(RP2040_PADS_BANK0_GPIO_OD, RP2040_PADS_BANK0_GPIO(27));	/* BATT_VOLTAGE_SENS */
@@ -226,6 +227,8 @@ rp2040_boardinitialize(void)
 	rp2040_gpio_set_function(CONFIG_RP2040_I2C0_GPIO + 1, RP2040_GPIO_FUNC_I2C);      /* SCL */
 	rp2040_gpio_set_pulls(CONFIG_RP2040_I2C0_GPIO, true, false);  /* Pull up */
 	rp2040_gpio_set_pulls(CONFIG_RP2040_I2C0_GPIO + 1, true, false);
+#else
+#warning "$$ CONFIG_RP2040_I2C0_GPIO not defined"
 #endif
 
 #if defined(CONFIG_RP2040_I2C1) &&  CONFIG_RP2040_I2C1_GPIO >= 0

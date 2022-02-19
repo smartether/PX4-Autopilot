@@ -46,6 +46,16 @@
 #include <px4_platform_common/px4_config.h>
 #include <nuttx/compiler.h>
 #include <stdint.h>
+/**
+ *  Device pin map
+ *  SPI0    2,3,4,5,
+ *  SPI1    10,11,12,13
+ *  I2C0    20,21
+ *  I2C1    18,19
+ *  UART0   0,1
+ *  UART1   8,9
+ */
+
 
 /* LEDs */
 // LED1 - GPIO 25 - Green

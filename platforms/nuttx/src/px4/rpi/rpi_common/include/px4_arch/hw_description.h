@@ -203,6 +203,23 @@ static inline constexpr uint32_t getGPIOPin(GPIO::Pin pin)
 
 	return 0;
 }
+/*
+namespace  I2C
+{
+    enum class Bus{
+        I2C0 = 1,
+        I2C1,
+    };
+}
+
+using SDA = GPIO::GPIOPin;   // i2c sda pin
+using SCL = GPIO::GPIOPin;   // i2c scl pin
+
+struct bus_device_i2c_external_cfg_t{
+    SDA sda_gpio;
+    SCL scl_gpio;
+};
+*/
 
 namespace SPI
 {
@@ -218,5 +235,7 @@ struct bus_device_external_cfg_t {
 	CS cs_gpio;
 	DRDY drdy_gpio;
 };
+
+using bus_device_i2c_external_cfg_t = bus_device_external_cfg_t;
 
 } // namespace SPI
