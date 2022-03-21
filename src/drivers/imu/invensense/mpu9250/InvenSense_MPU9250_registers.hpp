@@ -55,7 +55,7 @@ static constexpr uint8_t Bit6 = (1 << 6);
 static constexpr uint8_t Bit7 = (1 << 7);
 
 static constexpr uint32_t I2C_ADDRESS_DEFAULT = 0x68; // 0b110100X
-static constexpr uint32_t I2C_SPEED = 400 * 1000;
+static constexpr uint32_t I2C_SPEED = 100 * 1000;// 400 * 1000;
 
 static constexpr uint32_t SPI_SPEED = 1 * 1000 * 1000;
 static constexpr uint32_t SPI_SPEED_SENSOR = 10 * 1000 * 1000; // 20MHz for reading sensor and interrupt registers
@@ -112,6 +112,8 @@ enum class Register : uint8_t {
 
 	ZA_OFFSET_H        = 0x7D,
 	ZA_OFFSET_L        = 0x7E,
+
+    MPU6050_RA_ACCEL_XOUT_H  =   0x3B,
 };
 
 // CONFIG
@@ -238,6 +240,7 @@ enum PWR_MGMT_1_BIT : uint8_t {
 namespace FIFO
 {
 static constexpr size_t SIZE = 512;
+//static constexpr size_t SIZE_VIRTUAL = 12289;
 
 // FIFO_DATA layout when FIFO_EN has GYRO_{X, Y, Z}OUT and ACCEL set
 struct DATA {
@@ -253,6 +256,12 @@ struct DATA {
 	uint8_t GYRO_YOUT_L;
 	uint8_t GYRO_ZOUT_H;
 	uint8_t GYRO_ZOUT_L;
+//    uint8_t MAGNE_XOUT_H;
+//    uint8_t MAGNE_XOUT_L;
+//    uint8_t MAGNE_YOUT_H;
+//    uint8_t MAGNE_YOUT_L;
+//    uint8_t MAGNE_ZOUT_H;
+//    uint8_t MAGNE_ZOUT_L;
 };
 }
 

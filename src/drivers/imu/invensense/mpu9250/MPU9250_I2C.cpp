@@ -216,9 +216,12 @@ void MPU9250_I2C::RunImpl()
 
 			// always check current FIFO count
 			bool success = false;
-			const uint16_t fifo_count = FIFOReadCount();
+			uint16_t fifo_count = FIFOReadCount();
 
-			if (fifo_count >= FIFO::SIZE) {
+			if(fifo_count >= FIFO::SIZE)
+                fifo_count = FIFO::SIZE - FIFO::SIZE + FIFO::SIZE % sizeof(FIFO::DATA);
+
+            if (fifo_count >= FIFO::SIZE) {
 				FIFOReset();
 				perf_count(_fifo_overflow_perf);
 
@@ -228,6 +231,9 @@ void MPU9250_I2C::RunImpl()
 			} else {
 				// FIFO count (size in bytes) should be a multiple of the FIFO::DATA structure
 				uint8_t samples = fifo_count / sizeof(FIFO::DATA);
+
+                if(samples > FIFO_MAX_SAMPLES)
+                    samples = FIFO_MAX_SAMPLES - 1;
 
 				// tolerate minor jitter, leave sample to next iteration if behind by only 1
 				if (samples == _fifo_gyro_samples + 1) {

@@ -44,6 +44,7 @@ add_subdirectory(vehicle_magnetometer)
 px4_add_module(
 	MODULE modules__sensors
 	MAIN sensors
+	PRIORITY "SCHED_PRIORITY_DEFAULT+200"
 	SRCS
 		sensors.cpp
 		voted_sensors_update.cpp

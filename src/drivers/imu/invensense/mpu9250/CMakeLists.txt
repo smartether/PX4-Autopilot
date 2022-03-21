@@ -54,6 +54,7 @@ px4_add_module(
 	MODULE drivers__imu__invensense__mpu9250_i2c
 	MAIN mpu9250_i2c
 	COMPILE_FLAGS
+	PRIORITY "SCHED_PRIORITY_DEFAULT+200"
 	SRCS
 		InvenSense_MPU9250_registers.hpp
 		MPU9250_I2C.cpp
