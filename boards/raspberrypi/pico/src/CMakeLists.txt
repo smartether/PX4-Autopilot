@@ -32,10 +32,7 @@
 ############################################################################
 
 
-message("$$ pico sdk init")
-#include(${CMAKE_CURRENT_LIST_DIR}/../../../../pico_sdk_import.cmake)
-#pico_sdk_init()
-
+#include("$ENV{PICO_SDK_PATH}/src/common/pico_binary_info/CMakeLists.txt")
 add_library(drivers_board
 	boot_string.c
 	i2c.cpp
@@ -51,6 +48,7 @@ PUBLIC
 ${CMAKE_CURRENT_LIST_DIR}/../nuttx-config/include
 )
 
+
 target_link_libraries(drivers_board
 	PRIVATE
 		arch_i2c
@@ -59,4 +57,9 @@ target_link_libraries(drivers_board
 		nuttx_arch # sdio
 		nuttx_drivers # sdio
 		px4_layer
+#		pico_base_headers
+#		pico_base
+#		pico_stdlib
+#		pico_stdio
+#		pico_binary_info
 )
