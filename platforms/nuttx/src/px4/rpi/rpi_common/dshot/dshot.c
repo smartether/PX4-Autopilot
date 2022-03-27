@@ -101,7 +101,7 @@ void up_dshot_trigger(void)
 **/
 void dshot_motor_data_set(unsigned motor_number, uint16_t throttle, bool telemetry)
 {
-    PX4_INFO_RAW("$$ set throttle:%i", throttle);
+    PX4_INFO("$$ set throttle:%i", throttle);
 }
 
 int up_dshot_arm(bool armed)
