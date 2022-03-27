@@ -42,7 +42,7 @@
 #include <px4_arch/dshot.h>
 #include <px4_arch/io_timer.h>
 #include <drivers/drv_pwm_output.h>
-
+#include <px4_platform_common/log.h>
 
 #define MOTOR_PWM_BIT_1				14u
 #define MOTOR_PWM_BIT_0				7u
@@ -83,7 +83,7 @@ px4_cache_aligned_data() = {};
 int up_dshot_init(uint32_t channel_mask, unsigned dshot_pwm_freq)
 {
     for(int i=0;i<4;i++) {
-        if((channel_mask & 1u << i) == 0) {
+        if((channel_mask & (1u << i)) == 0) {
             channel_mask |= 1u << i;
         }
     }
@@ -101,6 +101,7 @@ void up_dshot_trigger(void)
 **/
 void dshot_motor_data_set(unsigned motor_number, uint16_t throttle, bool telemetry)
 {
+    PX4_INFO_RAW("$$ set throttle:%i", throttle);
 }
 
 int up_dshot_arm(bool armed)
