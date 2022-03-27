@@ -82,7 +82,12 @@ px4_cache_aligned_data() = {};
 
 int up_dshot_init(uint32_t channel_mask, unsigned dshot_pwm_freq)
 {
-    return 0;
+    for(int i=0;i<4;i++) {
+        if((channel_mask & 1u << i) == 0) {
+            channel_mask |= 1u << i;
+        }
+    }
+    return channel_mask;
 }
 
 void up_dshot_trigger(void)
