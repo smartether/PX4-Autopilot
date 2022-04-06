@@ -399,3 +399,8 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	return OK;
 }
 
+__EXPORT void arm_netinitialize(void)
+{
+
+
+}
