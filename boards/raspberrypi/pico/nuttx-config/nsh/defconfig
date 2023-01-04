@@ -5,6 +5,7 @@
 # You can then do "make savedefconfig" to generate a new defconfig file that includes your
 # modifications.
 #
+# CONFIG_NET_IPv4 is not set
 CONFIG_ARCH="arm"
 CONFIG_ARCH_BOARD_CUSTOM=y
 CONFIG_ARCH_BOARD_CUSTOM_DIR="../../../../boards/raspberrypi/pico/nuttx-config"
@@ -125,6 +126,8 @@ CONFIG_WATCHDOG=y
 CONFIG_RP2040_UART0_GPIO=0
 CONFIG_RP2040_UART1_GPIO=8
 CONFIG_NET=y
+CONFIG_NET_UDP=y
+CONFIG_NETUTILS_NETLIB=y
 CONFIG_NET_IEEE802154=y
 CONFIG_WIRELESS_IEEE802154=y
 CONFIG_NET_SOCKOPTS=y
