@@ -80,6 +80,9 @@
 #  include <parameters/flashparams/flashfs.h>
 #endif
 
+#include <nuttx/spi/spi_transfer.h>
+
+
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -364,6 +367,10 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	// SPI2: MPU9250 and BMP280
 	spi2 = rp2040_spibus_initialize(PX4_BUS_NUMBER_FROM_PX4(2));
+
+#ifdef CONFIG_RP2040_SPI_DRIVER
+    spi_register(spi2, PX4_BUS_NUMBER_FROM_PX4(2));
+#endif
 
 	if (!spi2) {
 		syslog(LOG_ERR, "[boot] FAILED to initialize SPI port 2\n");
