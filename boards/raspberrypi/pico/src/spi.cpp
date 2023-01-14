@@ -37,11 +37,10 @@
 
 constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
 	initSPIBus(SPI::Bus::SPI0, {
-		initSPIDevice(SPIDEV_MMCSD(0), SPI::CS{GPIO::Pin5}),
+		initSPIDevice(SPIDEV_WIRELESS(0), SPI::CS{GPIO::Pin5}),
 	}),
 	initSPIBusExternal(SPI::Bus::SPI1, {
-		initSPIConfigExternal(SPI::CS{GPIO::Pin13}),
-		initSPIConfigExternal(SPI::CS{GPIO::Pin14}),
+		initSPIConfigExternal(SPI::CS{GPIO::Pin9}),
 	}),
 };
 
