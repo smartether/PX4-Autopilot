@@ -81,6 +81,7 @@
 #endif
 
 #include <nuttx/spi/spi_transfer.h>
+#include <nuttx/syslog/syslog_console.h>
 
 
 /****************************************************************************
@@ -310,6 +311,10 @@ static struct spi_dev_s *spi2;
 
 __EXPORT int board_app_initialize(uintptr_t arg)
 {
+#if defined(CONFIG_CONSOLE_SYSLOG)
+    syslog_console_init();
+#endif
+
 	px4_platform_init();
 
 	/* configure the DMA allocator */				// Needs to be figured out

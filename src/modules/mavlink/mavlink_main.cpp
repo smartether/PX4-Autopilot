@@ -60,6 +60,8 @@
 #include "mavlink_receiver.h"
 #include "mavlink_main.h"
 
+#include <debug.h>
+
 // Guard against MAVLink misconfiguration
 #ifndef MAVLINK_CRC_EXTRA
 #error MAVLINK_CRC_EXTRA has to be defined on PX4 systems
@@ -981,6 +983,7 @@ const in_addr Mavlink::compute_broadcast_addr(const in_addr &host_addr, const in
 
 void Mavlink::init_udp()
 {
+    nerr("$$ init_udp");
 	PX4_DEBUG("Setting up UDP with port %hu", _network_port);
 
 	_myaddr.sin_family = AF_INET;
